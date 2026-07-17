@@ -42,7 +42,9 @@ except Exception:  # dependência opcional
 GH_OWNER = os.environ.get("GH_OWNER", "tiagossevero")
 GH_TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
 DASH_PASSWORD = os.environ.get("DASH_PASSWORD", "")
-REFRESH_SECONDS = int(os.environ.get("REFRESH_SECONDS", "120"))
+# Sem token, a API pública do GitHub limita a 60 req/h por IP; com o cache
+# do lado do servidor, 600s => ~42 req/h (seguro). Com token, 60s tranquilo.
+REFRESH_SECONDS = int(os.environ.get("REFRESH_SECONDS", "60" if GH_TOKEN else "600"))
 
 BRT = ZoneInfo("America/Sao_Paulo")
 API = "https://api.github.com"
@@ -157,7 +159,7 @@ def ultimo_post(dominio: str) -> dict:
 def coletar_site(site: dict) -> dict:
     return {
         **site,
-        "runs": runs_do_repo(site["repo"]),
+        "runs": runs_do_repo(site["repo"]) if GH_TOKEN else {},
         "vivo": site_no_ar(site["dominio"]),
         "post": ultimo_post(site["dominio"]) if site["tem_post"] else {},
     }
@@ -173,6 +175,8 @@ def carregar() -> list:
 # Apresentação
 # ---------------------------------------------------------------------------
 def cel_run(runs: dict, nome: str) -> str:
+    if not GH_TOKEN:
+        return "🔒"
     if "_erro" in runs:
         return "⚠️ erro API"
     run = runs.get(nome)
@@ -234,8 +238,12 @@ def main() -> None:
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Sites no ar", f"{no_ar}/{len(dados)}")
     m2.metric("Posts de hoje", f"{posts_hoje}/{len(com_post)}")
-    m3.metric("Crons com falha", falhas, delta_color="inverse")
+    m3.metric("Crons com falha", falhas if GH_TOKEN else "🔒", delta_color="inverse")
     m4.metric("Última coleta", dt.datetime.now(BRT).strftime("%H:%M:%S"))
+    if not GH_TOKEN:
+        st.info("Sem token do GitHub: mostrando **site no ar** e **último post**. "
+                "Para ver o status dos crons (Post diário/Deploy), defina a variável "
+                "de ambiente `GITHUB_TOKEN` (read-only) e reinicie o app.")
     st.divider()
 
     cab = st.columns([2.4, 1.1, 3.0, 1.7, 1.7])
