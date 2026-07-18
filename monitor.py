@@ -61,6 +61,7 @@ SITES = [
     {"repo": "site-incorp",       "dominio": "incorp.com.br",       "tem_post": True},
     {"repo": "site-tiago",        "dominio": "tiago.emp.br",        "tem_post": True},
     {"repo": "site-villagos",     "dominio": "villagos.com.br",     "tem_post": True},
+    {"repo": "site-ganja",        "dominio": "ganja.com.br",        "tem_post": True},
     {"repo": "site-studiovolari", "dominio": "studiovolari.com.br", "tem_post": False},
 ]
 
